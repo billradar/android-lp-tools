@@ -72,6 +72,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           VERSION=${VERSION:-0.0.0}
+          PACKAGE_ARCH=${{ matrix.package_arch }}
 
           mkdir -p deb/DEBIAN
           mkdir -p deb/usr/bin
@@ -79,16 +80,16 @@ jobs:
           cp bin/* deb/usr/bin/
 
           cat > deb/DEBIAN/control <<CONTROL
-Package: android-lp-tools
-Version: ${VERSION}
-Architecture: ${{ matrix.package_arch }}
-Maintainer: billradar
-Description: Android Dynamic Partition Tools Suite
-CONTROL
+          Package: android-lp-tools
+          Version: ${VERSION}
+          Architecture: ${PACKAGE_ARCH}
+          Maintainer: billradar
+          Description: Android Dynamic Partition Tools Suite
+          CONTROL
 
           dpkg-deb \
             --build deb \
-            android-lp-tools_${VERSION}_${{ matrix.package_arch }}.deb
+            android-lp-tools_${VERSION}_${PACKAGE_ARCH}.deb
 
 
       - name: Build RPM
@@ -105,22 +106,22 @@ CONTROL
 
 
           cat > rpmbuild/SPECS/android-lp-tools.spec <<SPEC
-Name: android-lp-tools
-Version: ${VERSION}
-Release: 1
-Summary: Android Dynamic Partition Tools Suite
-License: Apache-2.0
+          Name: android-lp-tools
+          Version: ${VERSION}
+          Release: 1
+          Summary: Android Dynamic Partition Tools Suite
+          License: Apache-2.0
 
-%description
-Android Dynamic Partition Tools Suite.
+          %description
+          Android Dynamic Partition Tools Suite.
 
-%install
-mkdir -p %{buildroot}/usr/bin
-cp -a %{_sourcedir}/android-lp-tools/usr/bin/* %{buildroot}/usr/bin/
+          %install
+          mkdir -p %{buildroot}/usr/bin
+          cp -a %{_sourcedir}/android-lp-tools/usr/bin/* %{buildroot}/usr/bin/
 
-%files
-/usr/bin/*
-SPEC
+          %files
+          /usr/bin/*
+          SPEC
 
 
           rpmbuild \
@@ -184,18 +185,18 @@ SPEC
           mkdir pkg
 
           cat > PKGBUILD <<PKG
-pkgname=android-lp-tools
-pkgver=${VERSION}
-pkgrel=1
-pkgdesc="Android Dynamic Partition Tools Suite"
-arch=('x86_64')
-license=('Apache')
+          pkgname=android-lp-tools
+          pkgver=${VERSION}
+          pkgrel=1
+          pkgdesc="Android Dynamic Partition Tools Suite"
+          arch=('x86_64')
+          license=('Apache')
 
-package() {
-  install -Dm755 bin/* \
-    \$pkgdir/usr/bin/
-}
-PKG
+          package() {
+            install -Dm755 bin/* \
+              \$pkgdir/usr/bin/
+          }
+          PKG
 
           makepkg --noconfirm
 
