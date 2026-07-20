@@ -166,24 +166,13 @@ jobs:
 
 
 
-  arch:
-    name: Build Arch package ${{ matrix.arch }}
+  arch-x86_64:
+    name: Build Arch x86_64
 
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        include:
-          - arch: x86_64
-            os: ubuntu-24.04
-            container: archlinux:latest
-
-          - arch: aarch64
-            os: ubuntu-24.04-arm
-            container: archlinuxarm/base:latest
+    runs-on: ubuntu-24.04
 
     container:
-      image: ${{ matrix.container }}
+      image: archlinux:latest
 
     steps:
       - name: Checkout
@@ -192,7 +181,7 @@ jobs:
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: android-lp-tools-*-linux-*
+          pattern: android-lp-tools-*-linux-amd64
           path: .
           merge-multiple: true
 
@@ -214,42 +203,20 @@ jobs:
           \) -executable -exec cp {} bin/ \;
           chmod +x bin/*
 
-      - name: Install dependencies
-        run: |
-          pacman -Sy --noconfirm \
-            base-devel \
-            git \
-            clang \
-            cmake \
-            autoconf \
-            automake \
-            libtool \
-            pkgconf \
-            python
-
-      - name: Check binaries
-        run: |
-          ls -la bin
-
-      - name: Create builder user
-        run: |
-          useradd -m builder
-          chown -R builder:builder .
-
       - name: Build Arch package
         run: |
           VERSION=${{ inputs.upload-tag }}
           VERSION=${VERSION#v}
 
           mkdir -p pkg/android-lp-tools/usr/bin
-          cp -av bin/* pkg/android-lp-tools/usr/bin/
+          cp -a bin/* pkg/android-lp-tools/usr/bin/
 
           cat > pkg/PKGBUILD <<-PKG
           pkgname=android-lp-tools
           pkgver=${VERSION}
           pkgrel=1
           pkgdesc="Android Dynamic Partition Tools Suite"
-          arch=('${{ matrix.arch }}')
+          arch=('x86_64')
           license=('Apache')
 
           package() {
@@ -261,11 +228,111 @@ jobs:
           mkdir -p pkg/usr/bin
           cp -a bin/* pkg/usr/bin/
 
-          chown -R builder:builder pkg
-          su builder -c "cd pkg && makepkg --noconfirm"
+          makepkg --noconfirm
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
         with:
-          name: arch-package-${{ matrix.arch }}
+          name: arch-package-x86_64
           path: pkg/*.pkg.tar.zst
+
+
+  arch-aarch64:
+    name: Build Arch aarch64
+
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: android-lp-tools-*-linux-arm64
+          path: .
+          merge-multiple: true
+
+      - name: Extract binaries
+        run: |
+          for f in *.tar.gz; do
+            tar -xzf "$f"
+          done
+
+      - name: Prepare binaries
+        run: |
+          mkdir -p bin
+          find . -type f \( \
+            -name lpmake -o \
+            -name lpunpack -o \
+            -name lpadd -o \
+            -name lpdump -o \
+            -name lpflash \
+          \) -executable -exec cp {} bin/ \;
+          chmod +x bin/*
+
+      - name: Setup Arch ARM rootfs
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            bsdtar \
+            qemu-user-static \
+            binfmt-support \
+            arch-install-scripts
+
+          mkdir arch-root
+
+          wget -q \
+            http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz \
+            -O archlinuxarm.tar.gz
+
+          sudo bsdtar -xpf archlinuxarm.tar.gz -C arch-root
+
+          sudo cp /usr/bin/qemu-aarch64-static \
+            arch-root/usr/bin/
+
+      - name: Build Arch package
+        run: |
+          mkdir -p arch-root/build
+
+          sudo mount -t proc proc arch-root/proc
+          sudo mount --rbind /sys arch-root/sys
+          sudo mount --rbind /dev arch-root/dev
+
+          sudo mount --bind "$PWD" arch-root/build
+
+          sudo arch-chroot arch-root bash -c "
+            pacman-key --init
+            pacman-key --populate archlinuxarm
+
+            pacman -Sy --noconfirm base-devel
+
+            useradd -m builder || true
+            chown -R builder:builder /build
+
+            su builder -c '
+              cd /build
+              mkdir -p pkg/usr/bin
+              cp -a bin/* pkg/usr/bin/
+
+                printf "%s\\n" \
+                  "pkgname=android-lp-tools" \
+                  "pkgver=1.0.0" \
+                  "pkgrel=1" \
+                  "pkgdesc=\"Android Dynamic Partition Tools Suite\"" \
+                  "arch=(aarch64)" \
+                  "license=(Apache)" \
+                  "package() {" \
+                  "  mkdir -p \$pkgdir/usr/bin" \
+                  "  cp -a usr/bin/* \$pkgdir/usr/bin/" \
+                  "}" > PKGBUILD
+
+            makepkg --noconfirm
+            '
+          "
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package-aarch64
+          path: arch-root/build/*.pkg.tar.zst
