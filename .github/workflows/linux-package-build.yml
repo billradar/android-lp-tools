@@ -167,19 +167,25 @@ jobs:
 
 
   arch:
-    name: Build Arch package
+    name: Build Arch package ${{ matrix.arch }}
 
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            os: ubuntu-24.04
+
+          - arch: aarch64
+            os: ubuntu-24.04-arm
 
     container:
       image: archlinux:latest
 
-
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
-
 
       - name: Download binaries
         uses: actions/download-artifact@v4
@@ -187,11 +193,24 @@ jobs:
           pattern: android-lp-tools-*-linux-*
           path: .
           merge-multiple: true
+
       - name: Extract binaries
         run: |
           for f in *.tar.gz; do
             tar -xzf "$f"
           done
+
+      - name: Prepare binaries
+        run: |
+          mkdir -p bin
+          find . -type f \( \
+            -name lpmake -o \
+            -name lpunpack -o \
+            -name lpadd -o \
+            -name lpdump -o \
+            -name lpflash \
+          \) -executable -exec cp {} bin/ \;
+          chmod +x bin/*
 
       - name: Install dependencies
         run: |
@@ -206,7 +225,9 @@ jobs:
             pkgconf \
             python
 
-
+      - name: Check binaries
+        run: |
+          ls -la bin
 
       - name: Create builder user
         run: |
@@ -215,41 +236,34 @@ jobs:
 
       - name: Build Arch package
         run: |
-
           VERSION=${{ inputs.upload-tag }}
           VERSION=${VERSION#v}
 
-          if ! echo "$VERSION" | grep -Eq '^[0-9]'; then
-            VERSION=0.0.0
-          fi
+          mkdir -p pkg/android-lp-tools/usr/bin
+          cp -av bin/* pkg/android-lp-tools/usr/bin/
 
-              mkdir -p pkg/android-lp-tools/usr/bin
-              cp -av bin/* pkg/android-lp-tools/usr/bin/
-              chown -R builder:builder pkg
+          cat > pkg/PKGBUILD <<-PKG
+          pkgname=android-lp-tools
+          pkgver=${VERSION}
+          pkgrel=1
+          pkgdesc="Android Dynamic Partition Tools Suite"
+          arch=('${{ matrix.arch }}')
+          license=('Apache')
 
-              cat > pkg/PKGBUILD <<-PKG
-              pkgname=android-lp-tools
-              pkgver=${VERSION}
-              pkgrel=1
-              pkgdesc="Android Dynamic Partition Tools Suite"
-              arch=('x86_64')
-              license=('Apache')
-              source=()
+          package() {
+            mkdir -p \$pkgdir/usr/bin
+            cp -a usr/bin/* \$pkgdir/usr/bin/
+          }
+          PKG
 
-              package() {
-                install -Dm755 android-lp-tools/usr/bin/* "\$pkgdir/usr/bin/"
-              }
-              PKG
+          mkdir -p pkg/usr/bin
+          cp -a bin/* pkg/usr/bin/
 
-              cat pkg/PKGBUILD
-            su builder -c "cd pkg && makepkg --noconfirm"
-
+          chown -R builder:builder pkg
+          su builder -c "cd pkg && makepkg --noconfirm"
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
         with:
-          name: arch-package
-          path: "pkg/*.pkg.tar.zst"
-# test
-
-
+          name: arch-package-${{ matrix.arch }}
+          path: pkg/*.pkg.tar.zst
