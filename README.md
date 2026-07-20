@@ -60,7 +60,8 @@ python3
 Debian / Ubuntu
 ```
 ## Install all dependencies:
-```sudo apt update
+```text
+sudo apt update
 
 sudo apt install -y \
     git \
@@ -97,13 +98,14 @@ DEBUG=1 ./build.sh
 
 ### Output
 After successful build:
+```text
 bin/
 ├── lpmake
 ├── lpadd
 ├── lpflash
 ├── lpunpack
 └── lpdump
-
+```
 ### Usage
 Dump dynamic partition metadata:
 ./bin/lpdump super.img
