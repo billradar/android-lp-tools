@@ -48,14 +48,14 @@ jobs:
 
       - name: Package
         run: |
-          mkdir -p release/android-lp-tools-${{ matrix.arch }}
+          mkdir -p release/android-lp-tools-${{ github.ref_name }}-${{ matrix.arch }}
 
-          cp bin/* release/android-lp-tools-${{ matrix.arch }}/
+          cp bin/* release/android-lp-tools-${{ github.ref_name }}-${{ matrix.arch }}/
 
           tar -czf \
-            android-lp-tools-${{ matrix.arch }}.tar.gz \
+            android-lp-tools-${{ github.ref_name }}-${{ matrix.arch }}.tar.gz \
             -C release \
-            android-lp-tools-${{ matrix.arch }}
+            android-lp-tools-${{ github.ref_name }}-${{ matrix.arch }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
