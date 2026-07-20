@@ -1,0 +1,68 @@
+name: Linux Build
+
+on:
+  workflow_call:
+    inputs:
+      upload-tag:
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            package_arch: amd64
+            os: ubuntu-24.04
+
+          - arch: arm64
+            package_arch: arm64
+            os: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            clang \
+            make \
+            git \
+            binutils \
+            cmake \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            perl \
+            python3
+
+      - name: Build
+        run: |
+          ./build.sh
+
+      - name: Package
+        run: |
+          mkdir -p release/android-lp-tools-${{ inputs.upload-tag }}-linux-${{ matrix.package_arch }}
+
+          cp bin/* release/android-lp-tools-${{ inputs.upload-tag }}-linux-${{ matrix.package_arch }}/
+
+          tar -czf \
+            android-lp-tools-${{ inputs.upload-tag }}-linux-${{ matrix.package_arch }}.tar.gz \
+            -C release \
+            android-lp-tools-${{ inputs.upload-tag }}-linux-${{ matrix.package_arch }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-lp-tools-${{ inputs.upload-tag }}-linux-${{ matrix.package_arch }}
+          path: android-lp-tools-${{ inputs.upload-tag }}-linux-${{ matrix.package_arch }}.tar.gz
+
+

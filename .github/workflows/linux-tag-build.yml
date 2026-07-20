@@ -11,8 +11,24 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+-[0-9]+'
 
 jobs:
-  run-linux-tag-build:
-    uses: ./.github/workflows/package.yml
+  run-linux-build:
+    uses: ./.github/workflows/linux-build.yml
+    secrets: inherit
+    with:
+      upload-tag: ${{ github.ref_name }}
+
+  run-linux-package-build:
+    needs: run-linux-build
+    uses: ./.github/workflows/linux-package-build.yml
+    secrets: inherit
+    with:
+      upload-tag: ${{ github.ref_name }}
+
+  run-linux-release:
+    needs:
+      - run-linux-build
+      - run-linux-package-build
+    uses: ./.github/workflows/linux-release.yml
     secrets: inherit
     with:
       upload-tag: ${{ github.ref_name }}

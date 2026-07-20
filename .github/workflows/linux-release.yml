@@ -1,0 +1,34 @@
+name: Linux Release
+
+on:
+  workflow_call:
+    inputs:
+      upload-tag:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*"
+          path: release
+          merge-multiple: true
+
+      - name: Check release files
+        run: |
+          find release -type f
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.upload-tag }}
+          files: |
+            release/**
