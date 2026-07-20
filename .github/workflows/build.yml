@@ -1,0 +1,60 @@
+name: Build Test
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "lib/**"
+      - "partition_tools/**"
+      - "build.sh"
+      - ".github/workflows/**"
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            os: ubuntu-24.04
+
+          - arch: arm64
+            os: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            clang \
+            make \
+            git \
+            binutils \
+            cmake \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            perl \
+            python3
+
+      - name: Build
+        run: |
+          ./build.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-lp-tools-${{ matrix.arch }}
+          path: bin/
