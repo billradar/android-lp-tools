@@ -219,8 +219,8 @@ jobs:
           VERSION=${{ inputs.upload-tag }}
           VERSION=${VERSION#v}
 
-          mkdir -p pkg/android-lp-tools/usr/bin
-          cp -a bin/* pkg/android-lp-tools/usr/bin/
+          mkdir -p pkg/usr/bin
+          cp -a bin/* pkg/usr/bin/
 
           cat > pkg/PKGBUILD <<-PKG
           pkgname=android-lp-tools
