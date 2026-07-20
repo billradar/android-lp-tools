@@ -58,6 +58,12 @@ jobs:
           ./build.sh
 
 
+      - name: Prepare binaries
+        run: |
+          mkdir -p bin
+          find . -type f \( -name lpmake -o -name lpunpack \) -exec cp {} bin/ \;
+          chmod +x bin/*
+
       - name: Build DEB
         run: |
           VERSION=${GITHUB_REF_NAME#v}
