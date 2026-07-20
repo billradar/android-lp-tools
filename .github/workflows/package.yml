@@ -230,3 +230,4 @@ jobs:
         with:
           name: arch-package
           path: "pkg/*.pkg.tar.zst"
+# test
