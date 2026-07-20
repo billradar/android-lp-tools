@@ -78,6 +78,12 @@ jobs:
             \) -executable -exec cp {} bin/ \;
             chmod +x bin/*
 
+
+      - name: Check binaries
+        run: |
+          ls -la
+          ls -la bin
+
       - name: Build DEB
         run: |
           VERSION=${{ inputs.upload-tag }}
@@ -201,11 +207,6 @@ jobs:
             python
 
 
-
-      - name: Check binaries
-        run: |
-          ls -la
-          ls -la bin
 
       - name: Create builder user
         run: |
