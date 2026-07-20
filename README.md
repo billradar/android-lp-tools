@@ -60,7 +60,8 @@ python3
 Debian / Ubuntu
 ```
 ## Install all dependencies:
-sudo apt update
+```sudo apt update
+
 sudo apt install -y \
     git \
     make \
@@ -73,7 +74,7 @@ sudo apt install -y \
     libtool \
     pkg-config \
     perl \
-    python3
+    python3```
 ## Notes
 The build script automatically downloads and builds protobuf.
 No additional protobuf package installation is required.
