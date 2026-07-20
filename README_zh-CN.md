@@ -1,4 +1,4 @@
-# Android Dynamic Partition Tools Suite
+# Android 动态分区工具套件
 
 [English](README.md)
 
