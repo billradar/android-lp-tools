@@ -236,6 +236,9 @@ jobs:
   release:
     name: Create Release
 
+    permissions:
+      contents: write
+
     needs:
       - deb-rpm
       - arch
