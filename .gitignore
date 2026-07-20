@@ -1,0 +1,31 @@
+# Build output
+bin/
+
+# Static libraries
+lib/lib/
+
+# Protobuf generated files
+partition_tools/*.pb.cc
+partition_tools/*.pb.h
+
+# Third-party dependencies generated during build
+third_party/
+
+# Object files
+*.o
+*.obj
+
+# Static/shared libraries
+*.a
+*.so
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+
+# Backup files
+*.bak
+*.backup
+*.before*
+*.disabled

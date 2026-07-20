@@ -260,12 +260,8 @@ static int PrintJson(const LpMetadata* metadata, std::ostream& cout,
     }
 #endif
 
-    auto error_or_json = jsonpb::MessageToJsonString(proto);
-    if (!error_or_json.ok()) {
-        cerr << error_or_json.error() << "\n";
-        return EX_SOFTWARE;
-    }
-    cout << *error_or_json;
+    auto json = jsonpb::MessageToJsonString(proto);
+    cout << json;
     return EX_OK;
 }
 

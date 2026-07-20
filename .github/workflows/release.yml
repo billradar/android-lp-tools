@@ -1,0 +1,78 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ubuntu-24.04
+
+    strategy:
+      matrix:
+        arch:
+          - x86_64
+          - arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            clang \
+            make \
+            git \
+            gcc-aarch64-linux-gnu \
+            binutils-aarch64-linux-gnu
+
+      - name: Build
+        run: |
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            export CC=aarch64-linux-gnu-gcc
+            export CPP=aarch64-linux-gnu-g++
+            export AR=aarch64-linux-gnu-ar
+          fi
+
+          ./build.sh
+
+      - name: Package
+        run: |
+          mkdir -p release/android-lp-tools-${{ matrix.arch }}
+
+          cp bin/* release/android-lp-tools-${{ matrix.arch }}/
+
+          tar -czf \
+            android-lp-tools-${{ matrix.arch }}.tar.gz \
+            -C release \
+            android-lp-tools-${{ matrix.arch }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-lp-tools-${{ matrix.arch }}
+          path: android-lp-tools-${{ matrix.arch }}.tar.gz
+
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/**/*.tar.gz

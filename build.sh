@@ -1,12 +1,136 @@
 #!/bin/bash
-set -x -e
-mkdir -p lib/lib bin
-CC=clang
-CPP=clang++
-AR=ar
-STRIP=strip
-CFLAGS=-static
 
+set -e
+
+[ "$DEBUG" = "1" ] && set -x
+
+ROOT=$(cd "$(dirname "$0")" && pwd)
+
+CC=${CC:-clang}
+CPP=${CPP:-clang++}
+AR=${AR:-ar}
+STRIP=${STRIP:-strip}
+
+
+# clean build (use --cache to keep dependencies)
+if [ "$1" != "--cache" ]; then
+    echo "Clean previous build..."
+
+    rm -rf "$ROOT/bin"
+    rm -rf "$ROOT/lib/lib"
+
+    rm -rf "$ROOT/third_party/src/protobuf"
+    rm -rf "$ROOT/third_party/lib"
+    rm -rf "$ROOT/third_party/include"
+
+    rm -f "$ROOT/partition_tools"/*.pb.cc
+    rm -f "$ROOT/partition_tools"/*.pb.h
+
+    mkdir -p "$ROOT/bin"
+    mkdir -p "$ROOT/lib/lib"
+fi
+
+ARCH=$(uname -m)
+
+case "$ARCH" in
+    aarch64|arm64)
+        ARCH_NAME=arm64
+        ;;
+    x86_64|amd64)
+        ARCH_NAME=x86_64
+        ;;
+    *)
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+        ;;
+esac
+
+echo "Architecture: $ARCH_NAME"
+
+mkdir -p "$ROOT/third_party/src"
+mkdir -p "$ROOT/third_party/include"
+mkdir -p "$ROOT/third_party/lib/$ARCH_NAME"
+
+PROTO_SRC="$ROOT/third_party/src/protobuf"
+PROTO_LIB="$ROOT/third_party/lib/$ARCH_NAME/libprotobuf.a"
+
+# 获取 protobuf
+if [ ! -d "$PROTO_SRC" ]; then
+    git clone \
+    https://android.googlesource.com/platform/external/protobuf \
+    "$PROTO_SRC"
+
+    cd "$PROTO_SRC"
+    git checkout android-11.0.0_r48
+    cd "$ROOT"
+fi
+
+# 保存头文件
+if [ ! -d "$ROOT/third_party/include/google" ]; then
+    cp -r "$PROTO_SRC/src/google" \
+    "$ROOT/third_party/include/"
+fi
+
+# jsonpb兼容头
+mkdir -p "$ROOT/third_party/include/jsonpb"
+
+cat > "$ROOT/third_party/include/jsonpb/jsonpb.h" <<'EOT'
+#pragma once
+
+#include <string>
+#include <google/protobuf/message.h>
+#include <google/protobuf/util/json_util.h>
+
+namespace jsonpb {
+
+inline std::string MessageToJsonString(
+        const google::protobuf::Message& message) {
+    std::string output;
+    google::protobuf::util::MessageToJsonString(
+        message, &output);
+    return output;
+}
+
+}
+EOT
+
+
+# 编译 protobuf
+if [ ! -f "$PROTO_LIB" ]; then
+
+    echo "Building protobuf..."
+
+    cd "$PROTO_SRC"
+
+    ./autogen.sh
+
+    ./configure \
+        --enable-static \
+        --disable-shared
+
+    make -j$(nproc)
+
+    cp src/.libs/libprotobuf.a "$PROTO_LIB"
+
+    cd "$ROOT"
+fi
+
+
+
+# generate protobuf source
+cd "$ROOT/partition_tools"
+
+if [ ! -f dynamic_partitions_device_info.pb.cc ]; then
+    "$PROTO_SRC/src/protoc" \
+        --cpp_out=. \
+        dynamic_partitions_device_info.proto
+fi
+
+cd "$ROOT"
+
+export PROTOBUF_LIB="$PROTO_LIB"
+
+# ===== merged static libraries =====
 cd lib
 cd liblog
 case "$OSTYPE" in
@@ -430,7 +554,14 @@ fi
 $AR rcs ../lib/libcrypto.a *.o
 rm -r *.o
 
-cd ../../partition_tools
+
+
+
+
+
+
+# ===== merged make.sh section =====
+cd "$ROOT/partition_tools"
 case "$OSTYPE" in
   linux* | darwin*)
   ;;
@@ -447,9 +578,23 @@ ${CPP} -std=c++17 -I../lib/include ${CFLAGS} -D_FILE_OFFSET_BITS=64 -o ../bin/lp
 
 ${CPP} -std=c++17 -I../lib/include ${CFLAGS} -D_FILE_OFFSET_BITS=64 -o ../bin/lpunpack lpunpack.cc ../lib/lib/liblp.a ../lib/lib/libsparse.a ../lib/lib/libext4_utils.a ../lib/lib/libz.a ../lib/lib/libbase.a ../lib/lib/fmtlib.a ../lib/lib/liblog.a ../lib/lib/libcrypto_utils.a ../lib/lib/libcrypto.a -lpthread ${LDFLAGS}
 
+echo "Linking lpdump with protobuf:"
+echo "$PROTOBUF_LIB"
+
+${CPP} -std=c++17 -I../lib/include -I../third_party/include ${CFLAGS} -D_FILE_OFFSET_BITS=64 -o ../bin/lpdump lpdump.cc lpdump_host.cc dynamic_partitions_device_info.pb.cc ../lib/lib/liblp.a ../lib/lib/libsparse.a ../lib/lib/libext4_utils.a ../lib/lib/libz.a ../lib/lib/libbase.a ../lib/lib/fmtlib.a ../lib/lib/liblog.a ../lib/lib/libcrypto_utils.a ../lib/lib/libcrypto.a ${PROTOBUF_LIB} -lpthread ${LDFLAGS}
+
 cd ..
-rm -r lib/lib
+# rm -r lib/lib
 $STRIP bin/lpmake
 $STRIP bin/lpadd
 $STRIP bin/lpflash
 $STRIP bin/lpunpack
+$STRIP bin/lpdump
+
+
+echo
+echo "================================"
+echo " Build completed successfully"
+echo " Output:"
+ls -lh "$ROOT/bin"
+echo "================================"
