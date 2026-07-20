@@ -7,26 +7,6 @@ on:
     tags:
       - "v*"
 
-
-  push:
-    tags:
-      - "v*"
-
-
-  push:
-    branches:
-      - main
-    paths:
-      - "build.sh"
-      - "lib/**"
-      - "partition_tools/**"
-      - ".github/workflows/package.yml"
-
-
-permissions:
-  contents: read
-
-
 jobs:
 
   deb-rpm:
