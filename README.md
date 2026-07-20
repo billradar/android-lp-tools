@@ -78,6 +78,7 @@ sudo apt install -y \
 The build script automatically downloads and builds protobuf.
 No additional protobuf package installation is required.
 Required static libraries are built automatically during the build process.
+
 ### Build
 Run:
 ./build.sh
@@ -91,6 +92,7 @@ Strip output binaries
 Debug Build
 Show detailed build commands:
 DEBUG=1 ./build.sh
+
 ### Output
 After successful build:
 bin/
@@ -99,14 +101,17 @@ bin/
 ├── lpflash
 ├── lpunpack
 └── lpdump
+
 ### Usage
 Dump dynamic partition metadata:
 ./bin/lpdump super.img
 Create dynamic partition images:
 ./bin/lpmake
+
 ### Clean Build
 Build artifacts can be removed safely:
 rm -rf bin third_party
 They will be regenerated automatically during the next build.
+
 ### License
 Based on Android Open Source Project components.
