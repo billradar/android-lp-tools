@@ -1,4 +1,4 @@
-# Android LP Tools
+# Android Dynamic Partition Tools Suite
 
 [English](README.md)
 
