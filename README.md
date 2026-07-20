@@ -58,9 +58,9 @@ pkg-config
 perl
 python3
 Debian / Ubuntu
-Install all dependencies:
+```
+## Install all dependencies:
 sudo apt update
-
 sudo apt install -y \
     git \
     make \
