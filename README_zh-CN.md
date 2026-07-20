@@ -23,6 +23,22 @@
   - x86_64 (`amd64`)
   - ARM64 (`aarch64`)
 
+## 项目来源
+
+本项目基于 Android Open Source Project (AOSP) 的动态分区工具。
+
+原始源码来源：
+
+- Android Open Source Project
+- `system/extras/partition_tools`
+
+本项目在原始代码基础上提供：
+
+- 独立的 `build.sh` 构建系统
+- 自动编译静态依赖库
+- 自动编译 protobuf
+- 多架构构建支持
+
 ## 环境依赖
 
 ### 编译依赖
