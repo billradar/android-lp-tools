@@ -1,11 +1,11 @@
 name: Build Linux Packages
 
 on:
-  workflow_dispatch:
-
-  push:
-    tags:
-      - "v*"
+  workflow_call:
+    inputs:
+      upload-tag:
+        required: true
+        type: string
 
 jobs:
 
@@ -72,7 +72,8 @@ jobs:
 
       - name: Build DEB
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${{ inputs.upload-tag }}
+          VERSION=${VERSION#v}
 
           if ! echo "$VERSION" | grep -Eq '^[0-9]'; then
             VERSION=0.0.0
@@ -99,7 +100,8 @@ jobs:
 
       - name: Build RPM
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${{ inputs.upload-tag }}
+          VERSION=${VERSION#v}
 
           if ! echo "$VERSION" | grep -Eq '^[0-9]'; then
             VERSION=0.0.0
@@ -197,7 +199,8 @@ jobs:
       - name: Build Arch package
         run: |
 
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${{ inputs.upload-tag }}
+          VERSION=${VERSION#v}
 
           if ! echo "$VERSION" | grep -Eq '^[0-9]'; then
             VERSION=0.0.0
