@@ -20,9 +20,11 @@ jobs:
       matrix:
         include:
           - arch: x86_64
+            package_arch: amd64
             os: ubuntu-24.04
 
           - arch: arm64
+            package_arch: arm64
             os: ubuntu-24.04-arm
 
     steps:
@@ -51,20 +53,20 @@ jobs:
 
       - name: Package
         run: |
-          mkdir -p release/android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.arch }}
+          mkdir -p release/android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.package_arch }}
 
-          cp bin/* release/android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.arch }}/
+          cp bin/* release/android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.package_arch }}/
 
           tar -czf \
-            android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.arch }}.tar.gz \
+            android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.package_arch }}.tar.gz \
             -C release \
-            android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.arch }}
+            android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.package_arch }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-lp-tools-${{ matrix.arch }}
-          path: android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.arch }}.tar.gz
+          name: android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.package_arch }}
+          path: android-lp-tools-${{ github.ref_name }}-linux-${{ matrix.package_arch }}.tar.gz
 
 
   release:
