@@ -10,13 +10,17 @@ on:
 jobs:
   build:
     name: Build ${{ matrix.arch }}
-    runs-on: ubuntu-24.04
+
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        arch:
-          - x86_64
-          - arm64
+        include:
+          - arch: x86_64
+            os: ubuntu-24.04
+
+          - arch: arm64
+            os: ubuntu-24.04-arm
 
     steps:
       - name: Checkout
@@ -29,17 +33,17 @@ jobs:
             clang \
             make \
             git \
-            gcc-aarch64-linux-gnu \
-            binutils-aarch64-linux-gnu
+            binutils \
+            cmake \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            perl \
+            python3
 
       - name: Build
         run: |
-          if [ "${{ matrix.arch }}" = "arm64" ]; then
-            export CC=aarch64-linux-gnu-gcc
-            export CPP=aarch64-linux-gnu-g++
-            export AR=aarch64-linux-gnu-ar
-          fi
-
           ./build.sh
 
       - name: Package
