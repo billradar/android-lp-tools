@@ -228,7 +228,13 @@ jobs:
           mkdir -p pkg/usr/bin
           cp -a bin/* pkg/usr/bin/
 
-          makepkg --noconfirm
+          useradd -m builder || true
+          chown -R builder:builder pkg
+
+          su builder -c '
+            cd pkg
+            makepkg --noconfirm
+          '
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
