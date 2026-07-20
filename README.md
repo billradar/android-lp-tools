@@ -24,19 +24,30 @@ This project builds Android Dynamic Partition related tools:
 
 ## Origin
 
-This project is based on Android Open Source Project (AOSP) Dynamic Partition tools.
+This project is based on:
 
-Original source:
+- LonelyFool/lpunpack_and_lpmake
 
-- Android Open Source Project
-- `system/extras/partition_tools`
+Original repository:
 
-This project provides an independent build system with:
+https://github.com/LonelyFool/lpunpack_and_lpmake
 
-- Standalone `build.sh` build process
+The original project provides Android Dynamic Partition tools,
+including:
+
+- lpmake
+- lpunpack
+- lpadd
+- lpflash
+- lpdump
+
+This project provides an improved standalone build system with:
+
+- Unified `build.sh`
 - Automatic static library compilation
 - Automatic protobuf build
-- Multi-architecture support
+- Multi-architecture build support
+- GitHub Actions release builds
 
 ## Requirements
 
