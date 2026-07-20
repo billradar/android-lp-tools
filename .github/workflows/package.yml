@@ -217,7 +217,7 @@ jobs:
               "source=()" \
               "" \
               "package() {" \
-              "  install -Dm755 bin/* \"\$pkgdir/usr/bin/\"" \
+              "  install -Dm755 \"\$startdir\"/bin/* \"\$pkgdir/usr/bin/\"" \
               "}" \
               > pkg/PKGBUILD
 
