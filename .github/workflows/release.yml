@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-lp-tools-${{ matrix.arch }}
-          path: android-lp-tools-${{ matrix.arch }}.tar.gz
+          path: android-lp-tools-${{ github.ref_name }}-${{ matrix.arch }}.tar.gz
 
 
   release:
