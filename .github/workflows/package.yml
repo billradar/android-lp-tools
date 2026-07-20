@@ -203,23 +203,23 @@ jobs:
             VERSION=0.0.0
           fi
 
-            mkdir -p pkg/bin
-            cp -av bin/* pkg/bin/
-            chown -R builder:builder pkg
+              mkdir -p pkg/android-lp-tools/usr/bin
+              cp -av bin/* pkg/android-lp-tools/usr/bin/
+              chown -R builder:builder pkg
 
-              printf '%s\n' \
-              "pkgname=android-lp-tools" \
-              "pkgver=${VERSION}" \
-              "pkgrel=1" \
-              "pkgdesc=\"Android Dynamic Partition Tools Suite\"" \
-              "arch=('x86_64')" \
-              "license=('Apache')" \
-              "source=()" \
-              "" \
-              "package() {" \
-              "  install -Dm755 \"\$startdir\"/bin/* \"\$pkgdir/usr/bin/\"" \
-              "}" \
-              > pkg/PKGBUILD
+              cat > pkg/PKGBUILD <<-PKG
+              pkgname=android-lp-tools
+              pkgver=${VERSION}
+              pkgrel=1
+              pkgdesc="Android Dynamic Partition Tools Suite"
+              arch=('x86_64')
+              license=('Apache')
+              source=()
+
+              package() {
+                install -Dm755 android-lp-tools/usr/bin/* "\$pkgdir/usr/bin/"
+              }
+              PKG
 
               cat pkg/PKGBUILD
             su builder -c "cd pkg && makepkg --noconfirm"
