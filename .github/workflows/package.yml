@@ -1,0 +1,207 @@
+name: Build Linux Packages
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+    paths:
+      - "build.sh"
+      - "lib/**"
+      - "partition_tools/**"
+      - ".github/workflows/package.yml"
+
+
+permissions:
+  contents: read
+
+
+jobs:
+
+  deb-rpm:
+    name: Build DEB/RPM ${{ matrix.package_arch }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            package_arch: amd64
+            rpm_arch: x86_64
+            os: ubuntu-24.04
+
+          - arch: arm64
+            package_arch: arm64
+            rpm_arch: aarch64
+            os: ubuntu-24.04-arm
+
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            clang \
+            make \
+            git \
+            binutils \
+            cmake \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            perl \
+            python3 \
+            dpkg-dev \
+            rpm
+
+
+      - name: Build
+        run: |
+          ./build.sh
+
+
+      - name: Build DEB
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${VERSION:-0.0.0}
+
+          mkdir -p deb/DEBIAN
+          mkdir -p deb/usr/bin
+
+          cp bin/* deb/usr/bin/
+
+          cat > deb/DEBIAN/control <<CONTROL
+Package: android-lp-tools
+Version: ${VERSION}
+Architecture: ${{ matrix.package_arch }}
+Maintainer: billradar
+Description: Android Dynamic Partition Tools Suite
+CONTROL
+
+          dpkg-deb \
+            --build deb \
+            android-lp-tools_${VERSION}_${{ matrix.package_arch }}.deb
+
+
+      - name: Build RPM
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${VERSION:-0.0.0}
+
+          mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+          mkdir -p rpmbuild/SOURCES/android-lp-tools/usr/bin
+
+          cp bin/* \
+            rpmbuild/SOURCES/android-lp-tools/usr/bin/
+
+
+          cat > rpmbuild/SPECS/android-lp-tools.spec <<SPEC
+Name: android-lp-tools
+Version: ${VERSION}
+Release: 1
+Summary: Android Dynamic Partition Tools Suite
+License: Apache-2.0
+
+%description
+Android Dynamic Partition Tools Suite.
+
+%install
+mkdir -p %{buildroot}/usr/bin
+cp -a %{_sourcedir}/android-lp-tools/usr/bin/* %{buildroot}/usr/bin/
+
+%files
+/usr/bin/*
+SPEC
+
+
+          rpmbuild \
+            --define "_topdir $(pwd)/rpmbuild" \
+            -bb rpmbuild/SPECS/android-lp-tools.spec
+
+
+          cp rpmbuild/RPMS/*/*.rpm .
+
+
+      - name: Upload DEB RPM
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.package_arch }}
+          path: |
+            *.deb
+            *.rpm
+
+
+
+  arch:
+    name: Build Arch package
+
+    runs-on: ubuntu-24.04
+
+    container:
+      image: archlinux:latest
+
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      - name: Install dependencies
+        run: |
+          pacman -Sy --noconfirm \
+            base-devel \
+            git \
+            clang \
+            cmake \
+            autoconf \
+            automake \
+            libtool \
+            pkgconf \
+            python
+
+
+      - name: Build
+        run: |
+          ./build.sh
+
+
+      - name: Build Arch package
+        run: |
+
+          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${VERSION:-0.0.0}
+
+          mkdir pkg
+
+          cat > PKGBUILD <<PKG
+pkgname=android-lp-tools
+pkgver=${VERSION}
+pkgrel=1
+pkgdesc="Android Dynamic Partition Tools Suite"
+arch=('x86_64')
+license=('Apache')
+
+package() {
+  install -Dm755 bin/* \
+    \$pkgdir/usr/bin/
+}
+PKG
+
+          makepkg --noconfirm
+
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: "*.pkg.tar.zst"
