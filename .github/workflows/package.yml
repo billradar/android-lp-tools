@@ -192,9 +192,10 @@ jobs:
             VERSION=0.0.0
           fi
 
-          mkdir pkg
+            mkdir -p pkg
+            cp -r bin pkg/
 
-          cat > PKGBUILD <<PKG
+            cat > pkg/PKGBUILD <<PKG
           pkgname=android-lp-tools
           pkgver=${VERSION}
           pkgrel=1
@@ -208,7 +209,8 @@ jobs:
           }
           PKG
 
-          su builder -c "makepkg --noconfirm"
+            cd pkg
+            su builder -c "makepkg --noconfirm"
 
 
       - name: Upload Arch package
