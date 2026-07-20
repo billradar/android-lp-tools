@@ -79,7 +79,9 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: android-lp-tools-*
           path: release
+          merge-multiple: true
 
       - name: Check release files
         run: |
@@ -89,4 +91,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/**/*.tar.gz
+            release/*.tar.gz
