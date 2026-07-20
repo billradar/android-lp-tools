@@ -175,6 +175,11 @@ jobs:
       image: archlinux:latest
 
     steps:
+      - name: Install Arch build dependencies
+        run: |
+          pacman -Sy --noconfirm
+          pacman -S --noconfirm base-devel
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -301,9 +306,6 @@ jobs:
         run: |
           mkdir -p arch-root/build
 
-          sudo mount -t proc proc arch-root/proc
-          sudo mount --rbind /sys arch-root/sys
-          sudo mount --rbind /dev arch-root/dev
 
           sudo mount --bind "$PWD" arch-root/build
 
