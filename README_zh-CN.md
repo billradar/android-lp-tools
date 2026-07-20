@@ -25,19 +25,30 @@
 
 ## 项目来源
 
-本项目基于 Android Open Source Project (AOSP) 的动态分区工具。
+本项目基于：
 
-原始源码来源：
+- Dargons10/lpunpack_and_lpmake
 
-- Android Open Source Project
-- `system/extras/partition_tools`
+原始仓库：
 
-本项目在原始代码基础上提供：
+https://github.com/Dargons10/lpunpack_and_lpmake
 
-- 独立的 `build.sh` 构建系统
+原项目提供独立构建：
+
+- `lpmake`
+- `lpunpack`
+
+本项目在原始项目基础上扩展：
+
+- 统一 `build.sh` 构建系统
+- 增加 Android 动态分区工具：
+  - `lpadd`
+  - `lpflash`
+  - `lpdump`
 - 自动编译静态依赖库
 - 自动编译 protobuf
-- 多架构构建支持
+- 支持多架构构建
+- 增加 GitHub Actions 自动发布
 
 ## 环境依赖
 
