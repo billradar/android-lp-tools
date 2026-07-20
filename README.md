@@ -74,7 +74,8 @@ sudo apt install -y \
     libtool \
     pkg-config \
     perl \
-    python3 ```
+    python3
+ ```
 ## Notes
 The build script automatically downloads and builds protobuf.
 No additional protobuf package installation is required.
