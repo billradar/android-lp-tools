@@ -232,7 +232,7 @@ jobs:
 
           package() {
             mkdir -p \$pkgdir/usr/bin
-            cp -a usr/bin/* \$pkgdir/usr/bin/
+            cp -a $startdir/usr/bin/* \$pkgdir/usr/bin/
           }
           PKG
 
