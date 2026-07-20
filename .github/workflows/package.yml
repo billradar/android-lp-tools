@@ -192,27 +192,25 @@ jobs:
             VERSION=0.0.0
           fi
 
-            mkdir -p pkg
-            cp -r bin pkg/
-            chown -R builder:builder pkg
+            mkdir -p pkg/bin
+            cp -av bin/* pkg/bin/
             chown -R builder:builder pkg
 
             cat > pkg/PKGBUILD <<PKG
-          pkgname=android-lp-tools
-          pkgver=${VERSION}
-          pkgrel=1
-          pkgdesc="Android Dynamic Partition Tools Suite"
-          arch=('x86_64')
-          license=('Apache')
+pkgname=android-lp-tools
+pkgver=${VERSION}
+pkgrel=1
+pkgdesc="Android Dynamic Partition Tools Suite"
+arch=('x86_64')
+license=('Apache')
+source=()
 
-          package() {
-            install -Dm755 bin/* \
-              \$pkgdir/usr/bin/
-          }
-          PKG
+package() {
+  install -Dm755 bin/* "$pkgdir/usr/bin/"
+}
+PKG
 
-            cd pkg
-            su builder -c "makepkg --noconfirm"
+            su builder -c "cd pkg && makepkg --noconfirm"
 
 
       - name: Upload Arch package
