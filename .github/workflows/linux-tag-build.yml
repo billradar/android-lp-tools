@@ -1,5 +1,8 @@
 name: Linux Tag Build
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
 
@@ -28,7 +31,27 @@ jobs:
     needs:
       - run-linux-build
       - run-linux-package-build
-    uses: ./.github/workflows/linux-release.yml
-    secrets: inherit
-    with:
-      upload-tag: ${{ github.ref_name }}
+
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*"
+          path: release
+          merge-multiple: true
+
+      - name: Check release files
+        run: |
+          find release -type f
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            release/**
