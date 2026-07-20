@@ -71,7 +71,10 @@ jobs:
       - name: Build DEB
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          VERSION=${VERSION:-0.0.0}
+
+          if ! echo "$VERSION" | grep -Eq '^[0-9]'; then
+            VERSION=0.0.0
+          fi
           PACKAGE_ARCH=${{ matrix.package_arch }}
 
           mkdir -p deb/DEBIAN
@@ -95,7 +98,10 @@ jobs:
       - name: Build RPM
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          VERSION=${VERSION:-0.0.0}
+
+          if ! echo "$VERSION" | grep -Eq '^[0-9]'; then
+            VERSION=0.0.0
+          fi
 
           mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
@@ -176,11 +182,19 @@ jobs:
           ./build.sh
 
 
+      - name: Create builder user
+        run: |
+          useradd -m builder
+          chown -R builder:builder .
+
       - name: Build Arch package
         run: |
 
           VERSION=${GITHUB_REF_NAME#v}
-          VERSION=${VERSION:-0.0.0}
+
+          if ! echo "$VERSION" | grep -Eq '^[0-9]'; then
+            VERSION=0.0.0
+          fi
 
           mkdir pkg
 
@@ -198,7 +212,7 @@ jobs:
           }
           PKG
 
-          makepkg --noconfirm
+          su builder -c "makepkg --noconfirm"
 
 
       - name: Upload Arch package
