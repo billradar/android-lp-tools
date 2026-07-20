@@ -22,6 +22,22 @@ This project builds Android Dynamic Partition related tools:
   - x86_64 (`amd64`)
   - ARM64 (`aarch64`)
 
+## Origin
+
+This project is based on Android Open Source Project (AOSP) Dynamic Partition tools.
+
+Original source:
+
+- Android Open Source Project
+- `system/extras/partition_tools`
+
+This project provides an independent build system with:
+
+- Standalone `build.sh` build process
+- Automatic static library compilation
+- Automatic protobuf build
+- Multi-architecture support
+
 ## Requirements
 
 ### Build Dependencies
