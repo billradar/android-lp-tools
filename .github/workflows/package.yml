@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
 
   push:
+    tags:
+      - "v*"
+
+
+  push:
     branches:
       - main
     paths:
