@@ -230,8 +230,8 @@ jobs:
           }
           PKG
 
-          mkdir -p pkg/usr/bin
-          cp -a bin/* pkg/usr/bin/
+          mkdir -p usr/bin
+          cp -a bin/* usr/bin/
 
           useradd -m builder || true
           chown -R builder:builder pkg
