@@ -237,6 +237,10 @@ jobs:
           PKG
 
 
+          echo "=== pkg debug ==="
+          ls -la pkg
+          ls -la pkg/usr || true
+          ls -la pkg/usr/bin || true
           useradd -m builder || true
           chown -R builder:builder pkg
 
