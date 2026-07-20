@@ -321,17 +321,17 @@ jobs:
               mkdir -p pkg/usr/bin
               cp -a bin/* pkg/usr/bin/
 
-                printf "%s\\n" \
-                  "pkgname=android-lp-tools" \
-                  "pkgver=1.0.0" \
-                  "pkgrel=1" \
-                  "pkgdesc=\"Android Dynamic Partition Tools Suite\"" \
-                  "arch=(aarch64)" \
-                  "license=(Apache)" \
-                  "package() {" \
-                  "  mkdir -p \$pkgdir/usr/bin" \
-                  "  cp -a usr/bin/* \$pkgdir/usr/bin/" \
-                  "}" > PKGBUILD
+                printf "%s\n" \
+                  'pkgname=android-lp-tools' \
+                  'pkgver=1.0.0' \
+                  'pkgrel=1' \
+                  'pkgdesc="Android Dynamic Partition Tools Suite"' \
+                  'arch=(aarch64)' \
+                  'license=(Apache)' \
+                  'package() {' \
+                  '  mkdir -p $pkgdir/usr/bin' \
+                  '  cp -a usr/bin/* $pkgdir/usr/bin/' \
+                  '}' > PKGBUILD
 
             makepkg --noconfirm
             '
