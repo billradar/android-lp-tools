@@ -247,36 +247,3 @@ jobs:
 # test
 
 
-  release:
-    name: Create Release
-
-    permissions:
-      contents: write
-
-    needs:
-      - deb-rpm
-      - arch
-
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: release
-
-      - name: Collect packages
-        run: |
-          mkdir -p release-files
-          find release -type f \( \
-            -name "*.deb" \
-            -o -name "*.rpm" \
-            -o -name "*.pkg.tar.zst" \
-          \) -exec cp {} release-files/ \;
-
-          ls -la release-files
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release-files/*
