@@ -61,8 +61,14 @@ jobs:
       - name: Prepare binaries
         run: |
           mkdir -p bin
-          find . -type f \( -name lpmake -o -name lpunpack \) -exec cp {} bin/ \;
-          chmod +x bin/*
+            find . -type f \( \
+              -name lpmake -o \
+              -name lpunpack -o \
+              -name lpadd -o \
+              -name lpdump -o \
+              -name lpflash \
+            \) -executable -exec cp {} bin/ \;
+            chmod +x bin/*
 
       - name: Build DEB
         run: |
@@ -178,6 +184,11 @@ jobs:
           ./build.sh
 
 
+      - name: Check binaries
+        run: |
+          ls -la
+          ls -la bin
+
       - name: Create builder user
         run: |
           useradd -m builder
@@ -196,20 +207,21 @@ jobs:
             cp -av bin/* pkg/bin/
             chown -R builder:builder pkg
 
-            cat > pkg/PKGBUILD <<PKG
-pkgname=android-lp-tools
-pkgver=${VERSION}
-pkgrel=1
-pkgdesc="Android Dynamic Partition Tools Suite"
-arch=('x86_64')
-license=('Apache')
-source=()
+              printf '%s\n' \
+              "pkgname=android-lp-tools" \
+              "pkgver=${VERSION}" \
+              "pkgrel=1" \
+              "pkgdesc=\"Android Dynamic Partition Tools Suite\"" \
+              "arch=('x86_64')" \
+              "license=('Apache')" \
+              "source=()" \
+              "" \
+              "package() {" \
+              "  install -Dm755 bin/* \"\$pkgdir/usr/bin/\"" \
+              "}" \
+              > pkg/PKGBUILD
 
-package() {
-  install -Dm755 bin/* "$pkgdir/usr/bin/"
-}
-PKG
-
+              cat pkg/PKGBUILD
             su builder -c "cd pkg && makepkg --noconfirm"
 
 
@@ -217,4 +229,4 @@ PKG
         uses: actions/upload-artifact@v4
         with:
           name: arch-package
-          path: "*.pkg.tar.zst"
+          path: "pkg/*.pkg.tar.zst"
