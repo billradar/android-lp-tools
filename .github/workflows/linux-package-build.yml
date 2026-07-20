@@ -208,6 +208,12 @@ jobs:
           \) -executable -exec cp {} bin/ \;
           chmod +x bin/*
 
+      - name: Debug binaries
+        run: |
+          ls -la
+          ls -la bin || true
+          find . -name lpmake -o -name lpunpack -o -name lpadd -o -name lpdump -o -name lpflash
+
       - name: Build Arch package
         run: |
           VERSION=${{ inputs.upload-tag }}
