@@ -26,24 +26,24 @@ This project builds Android Dynamic Partition related tools:
 
 This project is based on:
 
-- LonelyFool/lpunpack_and_lpmake
+- Dargons10/lpunpack_and_lpmake
 
 Original repository:
 
-https://github.com/LonelyFool/lpunpack_and_lpmake
+https://github.com/Dargons10/lpunpack_and_lpmake
 
-The original project provides Android Dynamic Partition tools,
-including:
+The original project provides a standalone build system for:
 
-- lpmake
-- lpunpack
-- lpadd
-- lpflash
-- lpdump
+- `lpmake`
+- `lpunpack`
 
-This project provides an improved standalone build system with:
+This project extends the original build system with:
 
 - Unified `build.sh`
+- Additional Android Dynamic Partition tools:
+  - `lpadd`
+  - `lpflash`
+  - `lpdump`
 - Automatic static library compilation
 - Automatic protobuf build
 - Multi-architecture build support
