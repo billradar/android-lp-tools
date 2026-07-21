@@ -214,41 +214,6 @@ jobs:
           ls -la bin || true
           find . -name lpmake -o -name lpunpack -o -name lpadd -o -name lpdump -o -name lpflash
 
-      - name: Build Arch package
-        run: |
-          VERSION=${{ inputs.upload-tag }}
-          VERSION=${VERSION#v}
-
-          mkdir -p pkg/usr/bin
-          cp -a bin/* pkg/usr/bin/
-
-          cat > pkg/PKGBUILD <<-PKG
-          pkgname=android-lp-tools
-          pkgver=${VERSION}
-          pkgrel=1
-          pkgdesc="Android Dynamic Partition Tools Suite"
-          arch=('x86_64')
-          license=('Apache')
-
-          package() {
-            mkdir -p \$pkgdir/usr/bin
-            cp -a $startdir/usr/bin/* \$pkgdir/usr/bin/
-          }
-          PKG
-
-
-          echo "=== pkg debug ==="
-          ls -la pkg
-          ls -la pkg/usr || true
-          ls -la pkg/usr/bin || true
-          useradd -m builder || true
-          chown -R builder:builder pkg
-
-          su builder -c '
-            cd pkg
-            makepkg --noconfirm
-          '
-
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
         with:
@@ -310,42 +275,49 @@ jobs:
           sudo cp /usr/bin/qemu-aarch64-static \
             arch-root/usr/bin/
 
+            sudo mkdir -p arch-root/var/cache/pacman/pkg
+            sudo mkdir -p arch-root/dev
+            sudo mount --bind /dev arch-root/dev
+
       - name: Build Arch package
         run: |
           mkdir -p arch-root/build
 
-
           sudo mount --bind "$PWD" arch-root/build
 
-          sudo arch-chroot arch-root bash -c "
-            pacman-key --init
-            pacman-key --populate archlinuxarm
+          sudo arch-chroot arch-root bash <<'CHROOT'
+          pacman-key --init
+          pacman-key --populate archlinuxarm
 
-            pacman -Sy --noconfirm base-devel
+          pacman -Sy --noconfirm base-devel
 
-            useradd -m builder || true
-            chown -R builder:builder /build
+          useradd -m builder || true
+          chown -R builder:builder /build
 
-            su builder -c '
-              cd /build
-              mkdir -p pkg/usr/bin
-              cp -a bin/* pkg/usr/bin/
+            su builder -c 'bash -s' <<'BUILDER'
+            cd /build
 
-                printf "%s\n" \
-                  'pkgname=android-lp-tools' \
-                  'pkgver=1.0.0' \
-                  'pkgrel=1' \
-                  'pkgdesc="Android Dynamic Partition Tools Suite"' \
-                  'arch=(aarch64)' \
-                  'license=(Apache)' \
-                  'package() {' \
-                  '  mkdir -p $pkgdir/usr/bin' \
-                  '  cp -a usr/bin/* $pkgdir/usr/bin/' \
-                  '}' > PKGBUILD
+            mkdir -p usr/bin
+            cp -a bin/* usr/bin/
+
+            cat > PKGBUILD <<'PKG'
+            pkgname=android-lp-tools
+            pkgver=1.0.0
+            pkgrel=1
+            pkgdesc="Android Dynamic Partition Tools Suite"
+            arch=('aarch64')
+            license=('Apache')
+            options=(!debug)
+
+            package() {
+            mkdir -p \$pkgdir/usr/bin
+            cp -a \$startdir/usr/bin/* \$pkgdir/usr/bin/
+            }
+            PKG
 
             makepkg --noconfirm
-            '
-          "
+            BUILDER
+          CHROOT
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
