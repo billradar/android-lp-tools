@@ -69,14 +69,15 @@ jobs:
       - name: Prepare binaries
         run: |
           mkdir -p bin
-            find . -type f \( \
-              -name lpmake -o \
-              -name lpunpack -o \
-              -name lpadd -o \
-              -name lpdump -o \
-              -name lpflash \
-            \) -executable -exec cp {} bin/ \;
-            chmod +x bin/*
+          find . -type f \( \
+            -name lpmake -o \
+            -name lpunpack -o \
+            -name lpadd -o \
+            -name lpdump -o \
+            -name lpflash \
+          \) -executable -exec cp {} bin/ \;
+          test -n "$(find bin -maxdepth 1 -type f -print -quit)"
+          chmod +x bin/*
 
 
       - name: Check binaries
@@ -85,9 +86,10 @@ jobs:
           ls -la bin
 
       - name: Build DEB
+        env:
+          RAW_VERSION: ${{ inputs.upload-tag }}
         run: |
-          VERSION=${{ inputs.upload-tag }}
-          VERSION=${VERSION#v}
+          VERSION="${RAW_VERSION#v}"
 
           if ! echo "$VERSION" | grep -Eq '^[0-9]'; then
             VERSION=0.0.0
@@ -113,9 +115,11 @@ jobs:
 
 
       - name: Build RPM
+        env:
+          RAW_VERSION: ${{ inputs.upload-tag }}
         run: |
-          VERSION=${{ inputs.upload-tag }}
-          VERSION=${VERSION#v}
+          VERSION="${RAW_VERSION#v}"
+          VERSION=${VERSION//-/_}
 
           if ! echo "$VERSION" | grep -Eq '^[0-9]'; then
             VERSION=0.0.0
@@ -177,8 +181,7 @@ jobs:
     steps:
       - name: Install Arch build dependencies
         run: |
-          pacman -Sy --noconfirm
-          pacman -S --noconfirm base-devel
+          pacman -Syu --noconfirm --needed base-devel
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -206,13 +209,41 @@ jobs:
             -name lpdump -o \
             -name lpflash \
           \) -executable -exec cp {} bin/ \;
+          test -n "$(find bin -maxdepth 1 -type f -print -quit)"
           chmod +x bin/*
 
-      - name: Debug binaries
+      - name: Build Arch package
+        env:
+          RAW_VERSION: ${{ inputs.upload-tag }}
         run: |
-          ls -la
-          ls -la bin || true
-          find . -name lpmake -o -name lpunpack -o -name lpadd -o -name lpdump -o -name lpflash
+          VERSION="${RAW_VERSION#v}"
+          VERSION=${VERSION//-/_}
+          if ! [[ "$VERSION" =~ ^[0-9][0-9A-Za-z._+]*$ ]]; then
+            VERSION=0.0.0
+          fi
+
+          cat > PKGBUILD <<PKG
+          pkgname=android-lp-tools
+          pkgver=${VERSION}
+          pkgrel=1
+          pkgdesc="Android Dynamic Partition Tools Suite"
+          arch=('x86_64')
+          license=('Apache-2.0')
+          options=(!debug)
+
+          package() {
+            install -d "\$pkgdir/usr/bin"
+            for binary in "\$srcdir"/bin/*; do
+              install -Dm755 "\$binary" "\$pkgdir/usr/bin/\$(basename "\$binary")"
+            done
+          }
+          PKG
+
+          useradd --create-home builder
+          chown -R builder:builder .
+          mkdir -p pkg
+          chown builder:builder pkg
+          runuser -u builder -- env PKGDEST="$PWD/pkg" makepkg --noconfirm --cleanbuild
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
@@ -253,6 +284,7 @@ jobs:
             -name lpdump -o \
             -name lpflash \
           \) -executable -exec cp {} bin/ \;
+          test -n "$(find bin -maxdepth 1 -type f -print -quit)"
           chmod +x bin/*
 
       - name: Setup Arch ARM rootfs
@@ -262,12 +294,14 @@ jobs:
             libarchive-tools \
             qemu-user-static \
             binfmt-support \
-            arch-install-scripts
+            arch-install-scripts \
+            ca-certificates \
+            wget
 
           mkdir arch-root
 
           wget -q \
-            http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz \
+            https://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz \
             -O archlinuxarm.tar.gz
 
           sudo bsdtar -xpf archlinuxarm.tar.gz -C arch-root
@@ -275,52 +309,64 @@ jobs:
           sudo cp /usr/bin/qemu-aarch64-static \
             arch-root/usr/bin/
 
-            sudo mkdir -p arch-root/var/cache/pacman/pkg
-            sudo mkdir -p arch-root/dev
-            sudo mount --bind /dev arch-root/dev
+          sudo mkdir -p arch-root/var/cache/pacman/pkg
+          sudo mkdir -p arch-root/dev
+          sudo mount --bind /dev arch-root/dev
 
       - name: Build Arch package
+        env:
+          RAW_VERSION: ${{ inputs.upload-tag }}
         run: |
+          VERSION="${RAW_VERSION#v}"
+          VERSION=${VERSION//-/_}
+          if ! [[ "$VERSION" =~ ^[0-9][0-9A-Za-z._+]*$ ]]; then
+            VERSION=0.0.0
+          fi
+
+          mkdir -p arch-package/bin
+          cp bin/* arch-package/bin/
+
+          cat > arch-package/PKGBUILD <<PKG
+          pkgname=android-lp-tools
+          pkgver=${VERSION}
+          pkgrel=1
+          pkgdesc="Android Dynamic Partition Tools Suite"
+          arch=('aarch64')
+          license=('Apache-2.0')
+          options=(!debug)
+
+          package() {
+            install -d "\$pkgdir/usr/bin"
+            for binary in "\$srcdir"/bin/*; do
+              install -Dm755 "\$binary" "\$pkgdir/usr/bin/\$(basename "\$binary")"
+            done
+          }
+          PKG
+
           mkdir -p arch-root/build
 
-          sudo mount --bind "$PWD" arch-root/build
+          sudo mount --bind "$PWD/arch-package" arch-root/build
 
           sudo arch-chroot arch-root bash <<'CHROOT'
           pacman-key --init
           pacman-key --populate archlinuxarm
 
-          pacman -Sy --noconfirm base-devel
+          pacman -Syu --noconfirm --needed base-devel
 
-          useradd -m builder || true
+          useradd -m builder
           chown -R builder:builder /build
 
-            su builder -c 'bash -s' <<'BUILDER'
-            cd /build
-
-            mkdir -p usr/bin
-            cp -a bin/* usr/bin/
-
-            cat > PKGBUILD <<'PKG'
-            pkgname=android-lp-tools
-            pkgver=1.0.0
-            pkgrel=1
-            pkgdesc="Android Dynamic Partition Tools Suite"
-            arch=('aarch64')
-            license=('Apache')
-            options=(!debug)
-
-            package() {
-            mkdir -p \$pkgdir/usr/bin
-            cp -a \$startdir/usr/bin/* \$pkgdir/usr/bin/
-            }
-            PKG
-
-            makepkg --noconfirm
-            BUILDER
+          su - builder -c 'cd /build && makepkg --noconfirm --cleanbuild'
           CHROOT
+
+      - name: Clean up Arch ARM mounts
+        if: always()
+        run: |
+          sudo umount arch-root/build || true
+          sudo umount arch-root/dev || true
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
         with:
           name: arch-package-aarch64
-          path: arch-root/build/*.pkg.tar.zst
+          path: arch-package/*.pkg.tar.zst
