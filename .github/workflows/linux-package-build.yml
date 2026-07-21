@@ -222,7 +222,10 @@ jobs:
             VERSION=0.0.0
           fi
 
-          cat > PKGBUILD <<PKG
+          mkdir -p /tmp/arch-package/bin /tmp/pkg
+          cp bin/* /tmp/arch-package/bin/
+
+          cat > /tmp/arch-package/PKGBUILD <<PKG
           pkgname=android-lp-tools
           pkgver=${VERSION}
           pkgrel=1
@@ -239,11 +242,11 @@ jobs:
           }
           PKG
 
-          useradd --create-home builder
-          chown -R builder:builder .
+          id -u builder >/dev/null 2>&1 || useradd --create-home builder
+          chown -R builder:builder /tmp/arch-package /tmp/pkg
           mkdir -p pkg
-          chown builder:builder pkg
-          runuser -u builder -- env PKGDEST="$PWD/pkg" makepkg --noconfirm --cleanbuild
+          runuser -u builder -- sh -c 'cd /tmp/arch-package && PKGDEST=/tmp/pkg makepkg --noconfirm --cleanbuild'
+          cp /tmp/pkg/*.pkg.tar.zst pkg/
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
@@ -323,10 +326,10 @@ jobs:
             VERSION=0.0.0
           fi
 
-          mkdir -p arch-package/bin
-          cp bin/* arch-package/bin/
+          mkdir -p /tmp/arch-package/bin
+          cp bin/* /tmp/arch-package/bin/
 
-          cat > arch-package/PKGBUILD <<PKG
+          cat > /tmp/arch-package/PKGBUILD <<PKG
           pkgname=android-lp-tools
           pkgver=${VERSION}
           pkgrel=1
@@ -345,7 +348,7 @@ jobs:
 
           mkdir -p arch-root/build
 
-          sudo mount --bind "$PWD/arch-package" arch-root/build
+          sudo mount --bind /tmp/arch-package arch-root/build
 
           sudo arch-chroot arch-root bash <<'CHROOT'
           pacman-key --init
@@ -353,11 +356,14 @@ jobs:
 
           pacman -Syu --noconfirm --needed base-devel
 
-          useradd -m builder
+          id -u builder >/dev/null 2>&1 || useradd -m builder
           chown -R builder:builder /build
 
           su - builder -c 'cd /build && makepkg --noconfirm --cleanbuild'
           CHROOT
+
+          mkdir -p pkg
+          cp /tmp/arch-package/*.pkg.tar.zst pkg/
 
       - name: Clean up Arch ARM mounts
         if: always()
@@ -369,4 +375,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: arch-package-aarch64
-          path: arch-package/*.pkg.tar.zst
+          path: pkg/*.pkg.tar.zst
