@@ -20,17 +20,10 @@ jobs:
     with:
       upload-tag: ${{ github.ref_name }}
 
-  run-linux-package-build:
-    needs: run-linux-build
-    uses: ./.github/workflows/linux-package-build.yml
-    secrets: inherit
-    with:
-      upload-tag: ${{ github.ref_name }}
 
   run-linux-release:
     needs:
       - run-linux-build
-      - run-linux-package-build
 
     permissions:
       contents: write
