@@ -276,8 +276,6 @@ jobs:
             arch-root/usr/bin/
 
             sudo mkdir -p arch-root/var/cache/pacman/pkg
-            sudo mkdir -p arch-root/dev
-            sudo mount --bind /dev arch-root/dev
 
       - name: Build Arch package
         run: |
