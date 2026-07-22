@@ -57,7 +57,7 @@ PROTO_LIB="$ROOT/third_party/lib/$ARCH_NAME/libprotobuf.a"
 # 获取 protobuf
 if [ ! -d "$PROTO_SRC" ]; then
     git clone \
-    https://android.googlesource.com/platform/external/protobuf \
+    https://github.com/billradar/protobuf \
     "$PROTO_SRC"
 
     cd "$PROTO_SRC"
